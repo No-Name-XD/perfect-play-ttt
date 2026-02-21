@@ -23,58 +23,57 @@ def empty():
     return [i for i in range(9) if GAME[i] == "-"]
 
 
-# -------- Purrfect win/draw strategy -------- #
+# -------- MINIMAX -------- #
 
-def bot():
-    # win
+def minimax(is_maximizing, depth=0):
+    if check("X"):
+        return 10 - depth
+    if check("O"):
+        return depth - 10
+    if draw():
+        return 0
+
+    if is_maximizing:
+        best = -100
+        for i in empty():
+            GAME[i] = "X"
+            score = minimax(False, depth+1)
+            GAME[i] = "-"
+            best = max(score, best)
+        return best
+    else:
+        best = 100
+        for i in empty():
+            GAME[i] = "O"
+            score = minimax(True, depth+1)
+            GAME[i] = "-"
+            best = min(score, best)
+        return best
+
+
+def best_move():
+    best_score = -100
+    move = None
+
     for i in empty():
         GAME[i] = "X"
-        if check("X"):
-            return
+        score = minimax(False)
         GAME[i] = "-"
 
-    # block
-    for i in empty():
-        GAME[i] = "O"
-        if check("O"):
-            GAME[i] = "X"
-            return
-        GAME[i] = "-"
+        if score > best_score:
+            best_score = score
+            move = i
 
-    # opposite corners
-    if GAME[4] == "O":
-        if GAME[0] == "X" and GAME[8] == "-":
-            GAME[8] = "X"
-            return
-        if GAME[2] == "X" and GAME[6] == "-":
-            GAME[6] = "X"
-            return
-        if GAME[6] == "X" and GAME[2] == "-":
-            GAME[2] = "X"
-            return
-        if GAME[8] == "X" and GAME[0] == "-":
-            GAME[0] = "X"
-            return
-
-    # center
-    if GAME[4] == "-":
-        GAME[4] = "X"
-        return
-
-    # corners
-    for i in [0,2,6,8]:
-        if GAME[i] == "-":
-            GAME[i] = "X"
-            return
-
-    # edges
-    for i in [1,3,5,7]:
-        if GAME[i] == "-":
-            GAME[i] = "X"
-            return
+    return move
 
 
-# -------- ui ig -------- #
+def bot():
+    move = best_move()
+    if move is not None:
+        GAME[move] = "X"
+
+
+# -------- UI -------- #
 
 def update_buttons():
     for i in range(9):
@@ -89,7 +88,6 @@ def update_buttons():
 
 
 def click(i):
-    # prevent clicking filled / finished game
     if GAME[i] != "-" or check("X") or check("O"):
         return
 
@@ -97,61 +95,58 @@ def click(i):
     GAME[i] = "O"
     update_buttons()
 
-    # check win
     if check("O"):
-        status.set("You did something fishy didn't you? CHEATER!")
+        status.set("You win! 😳")
         return
 
     if draw():
-        status.set("Won't lemme win and won't win yourself 😒")
+        status.set("It's a draw 😐")
         return
 
-    # bot turn
-    status.set("My turn boi...")
-    root.after(400, bot_turn)
+    status.set("AI thinking...")
+    root.after(300, bot_turn)
 
 
 def bot_turn():
     bot()
     update_buttons()
 
-    # check win
     if check("X"):
-        status.set("YOU LOOOSEE!! HAHAHA!!")
+        status.set("AI wins 😈")
         return
 
     if draw():
-        status.set("Won't lemme win and won't win yourself 😒")
+        status.set("It's a draw 😐")
         return
 
-    status.set("Your Turn")
+    status.set("Your turn")
 
 
 def reset():
     global GAME
     GAME = ["-"] * 9
 
-    # bot starts first
-    GAME[0] = "X"
-
+    # AI starts first (optional)
+    bot()
     update_buttons()
-    status.set("Your Turn")
+
+    status.set("Your turn")
 
 
 # -------- WINDOW -------- #
 
 root = tk.Tk()
-root.title("Unbeatable Tic Tac Toe 😈")
+root.title("Minimax Tic Tac Toe 🤖")
 root.geometry("400x550")
 root.configure(bg="#1e1e1e")
 root.resizable(False, False)
 
 status = tk.StringVar()
-status.set("Your Turn")
+status.set("Your turn")
 
 # Title
 title = tk.Label(root,
-                 text="Tic Tac Toe",
+                 text="Tic Tac Toe (Minimax AI)",
                  font=("Arial", 20, "bold"),
                  bg="#1e1e1e",
                  fg="white")
@@ -170,7 +165,6 @@ status_label = tk.Label(root,
                         bg="#1e1e1e",
                         fg="#00ffcc")
 status_label.pack(pady=15)
-
 
 for i in range(9):
     btn = tk.Button(frame,
@@ -197,8 +191,8 @@ restart_btn = tk.Button(root,
                         command=reset)
 restart_btn.pack(pady=10)
 
-# Start game (bot first move)
-GAME[0] = "X"
+# Start game
+bot()  # AI starts first
 update_buttons()
 
 root.mainloop()
