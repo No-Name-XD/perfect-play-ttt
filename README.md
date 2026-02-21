@@ -5,7 +5,7 @@ The bot prioritizes winning moves, blocks opponent threats, and follows optimal 
 
 ## Features
 - Unbeatable AI (never loses)
-- Rule-based decision making
+- Minimax Algorithm
 - Optimal move prioritization
 
 ## How it works
